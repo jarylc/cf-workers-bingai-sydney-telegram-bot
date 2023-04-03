@@ -48,8 +48,7 @@ export default {
 
 		// set temporary processing message if callback query
 		if (update.callback_query) {
-			const sendEditInlineMessageTextResponse = await Telegram.sendEditInlineMessageText(env.TELEGRAM_BOT_TOKEN, update.callback_query.inline_message_id, query, "(Processing...)")
-			console.log(sendEditInlineMessageTextResponse.json())
+			await Telegram.sendEditInlineMessageText(env.TELEGRAM_BOT_TOKEN, update.callback_query.inline_message_id, query, "(Processing...)")
 		}
 
 		if (update.message && update.message.text) {
