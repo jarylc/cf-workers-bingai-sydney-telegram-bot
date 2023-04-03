@@ -11,7 +11,7 @@ This is much slower than ChatGPT variants as there is no way to disable streamin
 This bot supports private chats, group chats and inline mode (tagging the bot in any chat with a query) with a confirmation button to make it smoother to use.
 
 Notes:
-- Inline mode has been developed deliberately to not support using context KV even though it should technically be possible
+- Inline mode has been developed deliberately to not support contexts, but it should technically be possible
 - Inline mode is capped at a 64-character limit because of `callback_data` limits, but it can be solved by saving the query in KV if required
 - This is mainly for personal use, if you would like to add features, do fork the repository. Do perform PRs back if you would be so kind!
 
