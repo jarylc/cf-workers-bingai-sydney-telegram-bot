@@ -68,7 +68,7 @@ export default {
 			// message starts with /clear
 			if (query.startsWith("/clear")) {
 				await Cloudflare.deleteKVChatSession(env.BINGAI_SYDNEY_TELEGRAM_BOT_KV, update.message.chat.id)
-				return Telegram.generateSendMessageResponse(update.message.chat.id, "ForcedReply keyboard cleared.", {
+				return Telegram.generateSendMessageResponse(update.message.chat.id, "Context for the current chat (if it existed) has been cleared.", {
 					"reply_markup": {
 						"remove_keyboard": true,
 					}
