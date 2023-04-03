@@ -2,7 +2,7 @@
 ![Logo](cf-workers-bingai-sydney-telegram-bot.png)
 
 ## Description
-![Example](example.jpg) ![Example (Inline)](example-inline.png)
+![Example](example.png) ![Example (Inline)](example-inline.png)
 
 Serverless Telegram bot in webhook mode to quickly interface with [BingAI a.k.a Sydney](https://www.bing.com/new)'s using a reversed engineered API
 
