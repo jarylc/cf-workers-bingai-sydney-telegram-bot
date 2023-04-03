@@ -61,7 +61,7 @@ export namespace Telegram {
                         ]
                     },
                     "description": "Send your query to BingAI (64 character limit, no context)",
-                    "thumb_url": "https://play-lh.googleusercontent.com/kmxAt02yG8Hp-TzZHDoRGFtB70QFz7njpWQzQp8KANztd-DozlJipu8tprSn80Q8pw"
+                    "thumb_url": "https://gitlab.com/jarylc/cf-workers-bingai-sydney-telegram-bot/-/raw/master/cf-workers-bingai-sydney-telegram-bot.png"
                 },
             ],
             "is_personal": true,
