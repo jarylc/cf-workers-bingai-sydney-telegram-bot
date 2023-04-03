@@ -180,22 +180,7 @@ export namespace BingAI {
                         ws.close()
 
                     const data: Response = JSON.parse(msgString)
-                    console.log(data)
                     resolve(data)
-
-                    const reply = data.item?.messages[data.item?.messages.length-1]
-
-                    let out = reply.text || reply.hiddenText || "No response."
-                    out = out.replace(/\[\^\d+\^]/g, "").trim()
-                    if (reply.sourceAttributions && reply.sourceAttributions.length > 0) {
-                        out += "\n\nSources:"
-                        for (const i in reply.sourceAttributions) {
-                            const sourceAttribution = reply.sourceAttributions[i]
-                            out += `\n${parseInt(i)+1}. [${sourceAttribution.providerDisplayName}](${sourceAttribution.seeMoreUrl})`
-                        }
-                    }
-                    console.log(out)
-                    resolve(out)
                 }
             })
 
