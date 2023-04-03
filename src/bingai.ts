@@ -152,8 +152,10 @@ export namespace BingAI {
         return await new Promise(async (resolve) => {
             if (typeof session == "string") {
                 session = await createConversation(session)
-                if (typeof session == "string")
-                    return resolve(session)
+                if (typeof session == "string") {
+                    resolve(session)
+                    return
+                }
             }
 
             let ws: WebSocket | null
