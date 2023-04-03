@@ -48,7 +48,8 @@ export default {
 
 		// set temporary processing message if callback query
 		if (update.callback_query) {
-			await Telegram.sendEditInlineMessageText(env.TELEGRAM_BOT_TOKEN, update.callback_query.inline_message_id, query, "(Processing...)")
+			const sendEditInlineMessageTextResponse = await Telegram.sendEditInlineMessageText(env.TELEGRAM_BOT_TOKEN, update.callback_query.inline_message_id, query, "(Processing...)")
+			console.log(sendEditInlineMessageTextResponse.json())
 		}
 
 		if (update.message && update.message.text) {
@@ -79,6 +80,7 @@ export default {
 		if (update.message) {
 			// query OpenAPI with context
 			let content = "Unexpected error"
+			let suggestions: string[] = []
 			const session = await Cloudflare.getKVChatSession(env.BINGAI_SYDNEY_TELEGRAM_BOT_KV, update.message.chat.id) || await BingAI.createConversation(env.BING_COOKIE)
 			if (typeof session !== "string") {
 				let response = await BingAI.complete(session, query)
@@ -93,9 +95,25 @@ export default {
 						await Cloudflare.deleteKVChatSession(env.BINGAI_SYDNEY_TELEGRAM_BOT_KV, update.message.chat.id)
 						content += "NOTE: This conversation has reached limits, forcing a new conversation."
 					}
+
+					suggestions = BingAI.extractSuggestions(response)
 				}
 			} else {
 				content = session
+			}
+
+			if (suggestions.length > 0) {
+				return Telegram.generateSendMessageResponse(update.message.chat.id, content, {
+					"reply_to_message_id": update.message.message_id,
+					"reply_markup": {
+						"inline_keyboard": suggestions.map(suggestion => {
+							return [{
+								"text": suggestion,
+								"callback_data": suggestion,
+							}]
+						})
+					}
+				})
 			}
 
 			return Telegram.generateSendMessageResponse(update.message.chat.id, content, {

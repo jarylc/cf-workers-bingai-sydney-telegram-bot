@@ -199,7 +199,6 @@ export namespace BingAI {
                             'nlu_direct_response_filter',
                             'deepleo',
                             'dloffstream',
-                            'enable_debug_commands',
                             'responsible_ai_policy_235',
                             'enablemm',
                             'h3precise',
@@ -248,5 +247,13 @@ export namespace BingAI {
             }
         }
         return data
+    }
+
+    export function extractSuggestions(response: Response) {
+        const reply = response.item?.messages[response.item?.messages.length-1]
+        if (reply.suggestedResponses && reply.suggestedResponses.length > 0) {
+            return reply.suggestedResponses.map(s => s.text)
+        }
+        return []
     }
 }
