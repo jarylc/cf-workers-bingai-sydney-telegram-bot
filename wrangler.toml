@@ -1,0 +1,7 @@
+name = "cf-workers-bingai-sydney-telegram-bot"
+main = "src/index.ts"
+compatibility_date = "2023-03-02"
+workers_dev = true
+
+[vars]
+TELEGRAM_USERNAME_WHITELIST = "jarylc Shirleymew"
