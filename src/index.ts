@@ -7,6 +7,7 @@ export interface Env {
 	TELEGRAM_BOT_TOKEN: string
 	TELEGRAM_USERNAME_WHITELIST: string
 	BING_COOKIE: string
+	BING_CONVERSATION_STYLE: string
 }
 
 export default {
@@ -82,7 +83,7 @@ export default {
 			let suggestions: string[] = []
 			const session = await Cloudflare.getKVChatSession(env.BINGAI_SYDNEY_TELEGRAM_BOT_KV, update.message.chat.id) || await BingAI.createConversation(env.BING_COOKIE)
 			if (typeof session !== "string") {
-				let response = await BingAI.complete(session, query)
+				let response = await BingAI.complete(session, env.BING_CONVERSATION_STYLE, query)
 				if (typeof response !== "string") {
 					content = BingAI.extractBody(response)
 					content += "\n\n"
@@ -105,12 +106,9 @@ export default {
 				return Telegram.generateSendMessageResponse(update.message.chat.id, content, {
 					"reply_to_message_id": update.message.message_id,
 					"reply_markup": {
-						"inline_keyboard": suggestions.map(suggestion => {
-							return [{
-								"text": suggestion,
-								"callback_data": suggestion,
-							}]
-						})
+						"keyboard": suggestions.map(suggestion => [{text: suggestion}]),
+						"one_time_keyboard": true,
+						"selective": true,
 					}
 				})
 			}
@@ -125,7 +123,7 @@ export default {
 			const callbackQuery = update.callback_query
 			ctx.waitUntil(new Promise(async _ => {
 				// query OpenAPI with context
-				let content = await BingAI.complete(env.BING_COOKIE, query)
+				let content = await BingAI.complete(env.BING_COOKIE, env.BING_CONVERSATION_STYLE, query)
 				if (typeof content !== "string") {
 					content = BingAI.extractBody(content)
 				}

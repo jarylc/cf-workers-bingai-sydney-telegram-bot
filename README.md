@@ -29,10 +29,11 @@ Notes:
 3. Run `npx wrangler secret put TELEGRAM_BOT_TOKEN` and set the Telegram bot token
 4. Run `npx wrangler secret put BING_COOKIE` and set your latest Microsoft Cookie header
 5. Add space-delimited case-sensitive usernames to whitelist in `TELEGRAM_USERNAME_WHITELIST` in wrangler.toml
-6. (Optional) To enable context, run `npx wrangler kv:namespace create session` and replace the ID of `BINGAI_SYDNEY_TELEGRAM_BOT_KV` wrangler.toml, else remove `kv_namespaces` block entirely from wrangler.toml
-7. Run `npx wrangler publish` to deploy to Cloudflare Workers
-8. (Optional) Enable `Inline Mode` for the bot on BotFather to allow inline query flow
-9. Replace `{TELEGRAM_BOT_TOKEN}` and `{WORKERS_NAMESPACE}` on the following `https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/setWebhook?&allowed_updates=%5B%22message%22%2C%22inline_query%22%2C%22callback_query%22%5D&url=https%3A%2F%2Fcf-workers-bingai-syndey-telegram-bot.{WORKERS_NAMESPACE}.workers.dev%2F{TELEGRAM_BOT_TOKEN}` and access it on your browser
+6. (Optional) Choose your `BING_CONVERSATION_STYLE` by commenting and uncommenting accordingly in wrangler.toml
+7. (Optional) To enable context, run `npx wrangler kv:namespace create session` and replace the ID of `BINGAI_SYDNEY_TELEGRAM_BOT_KV` wrangler.toml, else remove `kv_namespaces` block entirely from wrangler.toml
+8. Run `npx wrangler publish` to deploy to Cloudflare Workers
+9. (Optional) Enable `Inline Mode` for the bot on BotFather to allow inline query flow
+10. Replace `{TELEGRAM_BOT_TOKEN}` and `{WORKERS_NAMESPACE}` on the following `https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/setWebhook?&allowed_updates=%5B%22message%22%2C%22inline_query%22%2C%22callback_query%22%5D&url=https%3A%2F%2Fcf-workers-bingai-syndey-telegram-bot.{WORKERS_NAMESPACE}.workers.dev%2F{TELEGRAM_BOT_TOKEN}` and access it on your browser
 
 ### (On cookie expiry) Renewing BING_COOKIE
 1. Run `npx wrangler secret put BING_COOKIE` and set your latest Microsoft Cookie header

@@ -148,7 +148,7 @@ export namespace BingAI {
         return session
     }
 
-    export async function complete(session: string | Conversation, message: string): Promise<string | Response> {
+    export async function complete(session: string | Conversation, style: string, message: string): Promise<string | Response> {
         return await new Promise(async (resolve) => {
             if (typeof session == "string") {
                 session = await createConversation(session)
@@ -180,6 +180,7 @@ export namespace BingAI {
                         ws.close()
 
                     const data: Response = JSON.parse(msgString)
+                    console.log(data)
                     resolve(data)
                 }
             })
@@ -198,17 +199,15 @@ export namespace BingAI {
                         optionsSets: [
                             'nlu_direct_response_filter',
                             'deepleo',
-                            'dloffstream',
                             'responsible_ai_policy_235',
                             'enablemm',
-                            'h3precise',
+                            style,
                             'dtappid',
                             'cricinfo',
                             'cricinfov2',
                             'dv3sugg',
                         ],
                         sliceIds: [
-                            '216dloffstream',
                             '222dtappid',
                             '225cricinfo',
                             '224locals0',
@@ -227,7 +226,7 @@ export namespace BingAI {
                         conversationId: session.conversationId,
                     },
                 ],
-                invocationId: "0",
+                invocationId: session.currentIndex ? session.currentIndex.toString() : "0",
                 target: 'chat',
                 type: 4,
             };
