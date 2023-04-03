@@ -98,12 +98,12 @@ export namespace Telegram {
         })
     }
 
-    export function generateSendMessageResponse(chatID: string, text: string, additional_arguments?: { [key: string]: any }): Response {
+    export function generateSendMessageResponse(chatID: string, data: string, additional_arguments?: { [key: string]: any }): Response {
         return new Response(JSON.stringify({
             "method": "sendMessage",
             "chat_id": chatID,
             "parse_mode": "Markdown",
-            "text": text,
+            "text": data,
             ...additional_arguments
         }), {
             headers: {

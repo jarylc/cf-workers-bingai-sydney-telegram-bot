@@ -118,45 +118,59 @@ export namespace BingAI {
         serviceVersion: string
     }
 
-    export async function complete(cookie: string, message: string): Promise<string> {
+    export interface Conversation {
+        conversationId: string,
+        clientId: string,
+        conversationSignature: string,
+        result?: {
+            value: string,
+            message: string
+        }
+        currentIndex?: number
+    }
+
+    export async function createConversation(cookie: string): Promise<Conversation | string> {
+        const conversation = await fetch("https://edgeservices.bing.com/edgesvc/turing/conversation/create", {
+            "headers": {
+                "cookie": cookie,
+                'accept': 'application/json',
+                'content-type': 'application/json',
+                'x-forwarded-for': '1.1.1.1',
+            }
+        })
+        if (conversation.status !== 200) {
+            return "Failed to start conversation."
+        }
+        const session = await conversation.json() as Conversation
+        if (!session || !session.result || session.result.value != "Success") {
+            return session?.result?.message || "Unexpected error starting conversation."
+        }
+        return session
+    }
+
+    export async function complete(session: string | Conversation, message: string): Promise<string | Response> {
         return await new Promise(async (resolve) => {
-            const conversation = await fetch("https://edgeservices.bing.com/edgesvc/turing/conversation/create", {
-                "headers": {
-                    "cookie": cookie,
-                    'accept': 'application/json',
-                    'content-type': 'application/json',
-                    'x-forwarded-for': '1.1.1.1',
-                }
-            })
-
-            if (conversation.status !== 200) {
-                resolve("Failed to start conversation.")
-                return
+            if (typeof session == "string") {
+                session = await createConversation(session)
+                if (typeof session == "string")
+                    return resolve(session)
             }
 
-            const conversationJSON: {
-                conversationId: string,
-                clientId: string,
-                conversationSignature: string,
-                result: {
-                    value: string,
-                    message: string
+            let ws: WebSocket | null
+            while (true) {
+                try {
+                    let sydney = await fetch("https://sydney.bing.com/sydney/ChatHub", {
+                        headers: {
+                            Upgrade: 'websocket',
+                        },
+                    })
+                    ws = sydney.webSocket;
+                    if (sydney.status === 101 && ws && ws.readyState === WebSocket.READY_STATE_OPEN)
+                        break
                 }
-            } = await conversation.json();
-
-            if (!conversationJSON.result || conversationJSON.result.value != "Success") {
-                resolve(conversationJSON.result.message)
-                return
-            }
-
-            let ws: WebSocket | null = null
-            while (ws === null) {
-                let sydney = await fetch("https://sydney.bing.com/sydney/ChatHub", {
-                    headers: {
-                        Upgrade: 'websocket',
-                    },
-                })
-                ws = sydney.webSocket;
+                catch (e) {
+                    // ignore
+                }
             }
 
             ws.addEventListener('message', msg => {
@@ -166,8 +180,10 @@ export namespace BingAI {
                         ws.close()
 
                     const data: Response = JSON.parse(msgString)
+                    console.log(data)
+                    resolve(data)
+
                     const reply = data.item?.messages[data.item?.messages.length-1]
-                    console.log(reply)
 
                     let out = reply.text || reply.hiddenText || "No response."
                     out = out.replace(/\[\^\d+\^]/g, "").trim()
@@ -197,6 +213,8 @@ export namespace BingAI {
                         optionsSets: [
                             'nlu_direct_response_filter',
                             'deepleo',
+                            'dloffstream',
+                            'enable_debug_commands',
                             'responsible_ai_policy_235',
                             'enablemm',
                             'h3precise',
@@ -206,23 +224,23 @@ export namespace BingAI {
                             'dv3sugg',
                         ],
                         sliceIds: [
+                            '216dloffstream',
                             '222dtappid',
                             '225cricinfo',
                             '224locals0',
                         ],
                         traceId: [...Array(32)].map(() => Math.floor(Math.random() * 16).toString(16)).join(''),
-                        isStartOfSession: true,
+                        isStartOfSession: !session.currentIndex,
                         message: {
                             author: 'user',
                             text: message,
-                            messageType: 'SearchQuery',
+                            messageType: !session.currentIndex ? 'SearchQuery' : 'Chat',
                         },
-                        conversationSignature: conversationJSON.conversationSignature,
+                        conversationSignature: session.conversationSignature,
                         participant: {
-                            id: conversationJSON.clientId,
+                            id: session.clientId,
                         },
-                        conversationId: conversationJSON.conversationId,
-                        previousMessages: [],
+                        conversationId: session.conversationId,
                     },
                 ],
                 invocationId: "0",
@@ -231,5 +249,19 @@ export namespace BingAI {
             };
             ws.send(JSON.stringify(obj)+"");
         })
+    }
+
+    export function extractBody(response: Response): string {
+        const reply = response.item?.messages[response.item?.messages.length-1]
+        let data = reply.text || reply.hiddenText || "No response."
+        data = data.replace(/\[\^\d+\^]/g, "").trim()
+        if (reply.sourceAttributions && reply.sourceAttributions.length > 0) {
+            data += "\n\nSources:"
+            for (const i in reply.sourceAttributions) {
+                const sourceAttribution = reply.sourceAttributions[i]
+                data += `\n${parseInt(i)+1}. [${sourceAttribution.providerDisplayName}](${sourceAttribution.seeMoreUrl})`
+            }
+        }
+        return data
     }
 }

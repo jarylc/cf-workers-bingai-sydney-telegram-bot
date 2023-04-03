@@ -1,7 +1,9 @@
 import {BingAI} from "./bingai"
 import {Telegram} from "./telegram"
+import {Cloudflare} from "./cloudflare";
 
 export interface Env {
+	BINGAI_SYDNEY_TELEGRAM_BOT_KV: KVNamespace
 	TELEGRAM_BOT_TOKEN: string
 	TELEGRAM_USERNAME_WHITELIST: string
 	BING_COOKIE: string
@@ -65,6 +67,7 @@ export default {
 
 			// message starts with /clear
 			if (query.startsWith("/clear")) {
+				await Cloudflare.deleteKVChatSession(env.BINGAI_SYDNEY_TELEGRAM_BOT_KV, update.message.chat.id)
 				return Telegram.generateSendMessageResponse(update.message.chat.id, "ForcedReply keyboard cleared.", {
 					"reply_markup": {
 						"remove_keyboard": true,
@@ -75,7 +78,25 @@ export default {
 
 		if (update.message) {
 			// query OpenAPI with context
-			const content = await BingAI.complete(env.BING_COOKIE, query)
+			let content = "Unexpected error"
+			const session = await Cloudflare.getKVChatSession(env.BINGAI_SYDNEY_TELEGRAM_BOT_KV, update.message.chat.id) || await BingAI.createConversation(env.BING_COOKIE)
+			if (typeof session !== "string") {
+				let response = await BingAI.complete(session, query)
+				if (typeof response !== "string") {
+					content = BingAI.extractBody(response)
+					content += "\n\n"
+					if (response.item.throttling.numUserMessagesInConversation < response.item.throttling.maxNumUserMessagesInConversation) {
+						session.currentIndex = response.item.throttling.numUserMessagesInConversation
+						await Cloudflare.putKVChatSession(env.BINGAI_SYDNEY_TELEGRAM_BOT_KV, update.message.chat.id, session)
+						content += `(${response.item.throttling.numUserMessagesInConversation} / ${response.item.throttling.maxNumUserMessagesInConversation})`
+					} else {
+						await Cloudflare.deleteKVChatSession(env.BINGAI_SYDNEY_TELEGRAM_BOT_KV, update.message.chat.id)
+						content += "NOTE: This conversation has reached limits, forcing a new conversation."
+					}
+				}
+			} else {
+				content = session
+			}
 
 			return Telegram.generateSendMessageResponse(update.message.chat.id, content, {
 				"reply_to_message_id": update.message.message_id,
@@ -87,7 +108,10 @@ export default {
 			const callbackQuery = update.callback_query
 			ctx.waitUntil(new Promise(async _ => {
 				// query OpenAPI with context
-				const content = await BingAI.complete(env.BING_COOKIE, query)
+				let content = await BingAI.complete(env.BING_COOKIE, query)
+				if (typeof content !== "string") {
+					content = BingAI.extractBody(content)
+				}
 
 				// edit message with reply
 				await Telegram.sendEditInlineMessageText(env.TELEGRAM_BOT_TOKEN, callbackQuery.inline_message_id, query, content)
@@ -99,5 +123,3 @@ export default {
 		return new Response(null) // no action (should never happen if allowed_updates is set correctly)
 	},
 }
-
-const genRanHex = (size: number) => [...Array(size)].map(() => Math.floor(Math.random() * 16).toString(16)).join('');
