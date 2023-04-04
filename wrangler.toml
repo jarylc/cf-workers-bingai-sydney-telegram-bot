@@ -9,6 +9,7 @@ kv_namespaces = [
 
 [vars]
 TELEGRAM_USERNAME_WHITELIST = "jarylc Shirleymew"
-BING_CONVERSATION_STYLE = "harmonyv3" # balanced
+BING_CONVERSATION_STYLE = "galileo" # fast (recommended)
+#BING_CONVERSATION_STYLE = "harmonyv3" # balanced
 #BING_CONVERSATION_STYLE = "h3imaginative" # creative
 #BING_CONVERSATION_STYLE = "h3precise" # precise

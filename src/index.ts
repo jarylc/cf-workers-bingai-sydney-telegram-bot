@@ -89,7 +89,7 @@ export default {
 					content += "\n\n"
 					if (response.item.throttling.numUserMessagesInConversation < response.item.throttling.maxNumUserMessagesInConversation) {
 						session.currentIndex = response.item.throttling.numUserMessagesInConversation
-						await Cloudflare.putKVChatSession(env.BINGAI_SYDNEY_TELEGRAM_BOT_KV, update.message.chat.id, session)
+						await Cloudflare.putKVChatSession(env.BINGAI_SYDNEY_TELEGRAM_BOT_KV, update.message.chat.id, 21600, session) // conversations expire after 6h (or 21600 seconds)
 						content += `(${response.item.throttling.numUserMessagesInConversation} / ${response.item.throttling.maxNumUserMessagesInConversation})`
 					} else {
 						await Cloudflare.deleteKVChatSession(env.BINGAI_SYDNEY_TELEGRAM_BOT_KV, update.message.chat.id)

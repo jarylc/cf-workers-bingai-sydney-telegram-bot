@@ -8,11 +8,11 @@ export namespace Cloudflare {
         return await kv.get(chat_id, { type: "json" }) || null
     }
 
-    export async function putKVChatSession(kv: KVNamespace, chat_id: string, context: BingAI.Conversation) {
+    export async function putKVChatSession(kv: KVNamespace, chat_id: string, ttlSeconds: number, context: BingAI.Conversation) {
         if (!kv) {
             return
         }
-        await kv.put(chat_id, JSON.stringify(context))
+        await kv.put(chat_id, JSON.stringify(context), {expirationTtl: ttlSeconds})
     }
 
     export async function deleteKVChatSession(kv: KVNamespace, chat_id: string) {

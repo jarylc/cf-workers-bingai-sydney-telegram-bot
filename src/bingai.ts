@@ -177,6 +177,13 @@ export namespace BingAI {
 
             ws.addEventListener('message', msg => {
                 let msgString = msg.data.toString().split('')[0]
+                // handle ping
+                if (msgString.includes('"type":6')) {
+                    if (ws)
+                        ws.send('{"type":6}')
+                    return
+                }
+                // handle final message
                 if (msgString.includes("firstNewMessageIndex")) {
                     if (ws)
                         ws.close()
@@ -189,10 +196,7 @@ export namespace BingAI {
 
             ws.accept()
 
-            ws.send(JSON.stringify({
-                "protocol": "json",
-                "version": 1,
-            })+"")
+            ws.send('{"protocol": "json", "version": 1}')
 
             const obj = {
                 arguments: [
