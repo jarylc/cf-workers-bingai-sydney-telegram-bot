@@ -1,3 +1,5 @@
+import {Telegram} from "./telegram";
+
 export namespace BingAI {
     export interface Response {
         type: number
@@ -243,12 +245,12 @@ export namespace BingAI {
     export function extractBody(response: Response): string {
         const reply = response.item?.messages[response.item?.messages.length-1]
         let data = reply.text || reply.hiddenText || "No response."
-        data = data.replace(/\[\^\d+\^]/g, "").trim()
+        data = Telegram.sanitize(data)
         if (reply.sourceAttributions && reply.sourceAttributions.length > 0) {
             data += "\n\nSources:"
             for (const i in reply.sourceAttributions) {
                 const sourceAttribution = reply.sourceAttributions[i]
-                data += `\n${parseInt(i)+1}. [${sourceAttribution.providerDisplayName}](${sourceAttribution.seeMoreUrl})`
+                data += `\n${parseInt(i)+1}. [${Telegram.sanitize(sourceAttribution.providerDisplayName)}](${sourceAttribution.seeMoreUrl})`
             }
         }
         return data

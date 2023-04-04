@@ -42,6 +42,10 @@ export default {
 		if ((!update.message || !update.message.text) && (!update.callback_query)) {
 			return new Response(null) // no action
 		}
+		const chatID = update.message?.chat.id || update.callback_query?.from.id || null
+		if (chatID == null) {
+			return new Response(null) // no action
+		}
 		const query = update.message?.text || update.callback_query?.data
 		if (!query) {
 			return new Response(null) // no action
@@ -77,64 +81,87 @@ export default {
 			}
 		}
 
-		if (update.message) {
-			// query OpenAPI with context
-			let content = "Unexpected error"
+		if (update.message || update.callback_query) {
+			const session = await Cloudflare.getKVChatSession(env.BINGAI_SYDNEY_TELEGRAM_BOT_KV, chatID) || await BingAI.createConversation(env.BING_COOKIE)
+
+			let content = "Unexpected condition"
 			let suggestions: string[] = []
-			const session = await Cloudflare.getKVChatSession(env.BINGAI_SYDNEY_TELEGRAM_BOT_KV, update.message.chat.id) || await BingAI.createConversation(env.BING_COOKIE)
-			if (typeof session !== "string") {
-				let response = await BingAI.complete(session, env.BING_CONVERSATION_STYLE, query)
-				if (typeof response !== "string") {
-					content = BingAI.extractBody(response)
-					content += "\n\n"
-					if (response.item.throttling.numUserMessagesInConversation < response.item.throttling.maxNumUserMessagesInConversation) {
-						session.currentIndex = response.item.throttling.numUserMessagesInConversation
-						await Cloudflare.putKVChatSession(env.BINGAI_SYDNEY_TELEGRAM_BOT_KV, update.message.chat.id, 21600, session) // conversations expire after 6h (or 21600 seconds)
-						content += `(${response.item.throttling.numUserMessagesInConversation} / ${response.item.throttling.maxNumUserMessagesInConversation})`
-					} else {
-						await Cloudflare.deleteKVChatSession(env.BINGAI_SYDNEY_TELEGRAM_BOT_KV, update.message.chat.id)
-						content += "NOTE: This conversation has reached limits, forcing a new conversation."
-					}
 
-					suggestions = BingAI.extractSuggestions(response)
+			if (update.message) {
+				if (typeof session !== "string") {
+					[content, suggestions] = await complete(env, chatID, session, query)
+				} else {
+					content = session
 				}
-			} else {
-				content = session
-			}
 
-			if (suggestions.length > 0) {
+				if (suggestions.length > 0) {
+					return Telegram.generateSendMessageResponse(update.message.chat.id, content, {
+						"reply_to_message_id": update.message.message_id,
+						"reply_markup": {
+							"keyboard": suggestions.map(suggestion => [{text: suggestion}]),
+							"one_time_keyboard": true,
+							"selective": true,
+						}
+					})
+				}
+
 				return Telegram.generateSendMessageResponse(update.message.chat.id, content, {
 					"reply_to_message_id": update.message.message_id,
 					"reply_markup": {
-						"keyboard": suggestions.map(suggestion => [{text: suggestion}]),
-						"one_time_keyboard": true,
-						"selective": true,
+						"remove_keyboard": true,
 					}
 				})
 			}
+			if (update.callback_query) {
+				const callbackQuery = update.callback_query
+				ctx.waitUntil(new Promise(async _ => {
+					// query OpenAPI with context
+					if (typeof session !== "string") {
+						[content, suggestions] = await complete(env, chatID, session, query)
+						content += "\nNOTE: Inline query context is shared and can be cleared on the private chat with the bot."
+					} else {
+						content = session
+					}
 
-			return Telegram.generateSendMessageResponse(update.message.chat.id, content, {
-				"reply_to_message_id": update.message.message_id,
-				"reply_markup": {
-					"remove_keyboard": true,
-				}
-			})
-		} else if (update.callback_query) {
-			const callbackQuery = update.callback_query
-			ctx.waitUntil(new Promise(async _ => {
-				// query OpenAPI with context
-				let content = await BingAI.complete(env.BING_COOKIE, env.BING_CONVERSATION_STYLE, query)
-				if (typeof content !== "string") {
-					content = BingAI.extractBody(content)
-				}
-
-				// edit message with reply
-				await Telegram.sendEditInlineMessageText(env.TELEGRAM_BOT_TOKEN, callbackQuery.inline_message_id, query, content)
-			}))
-			return Telegram.generateAnswerCallbackQueryResponse(callbackQuery.id)
+					// edit message with reply
+					await Telegram.sendEditInlineMessageText(env.TELEGRAM_BOT_TOKEN, callbackQuery.inline_message_id, query, content)
+				}))
+				return Telegram.generateAnswerCallbackQueryResponse(callbackQuery.id)
+			}
 		}
 
 		// other update
 		return new Response(null) // no action (should never happen if allowed_updates is set correctly)
 	},
+}
+
+enum CIRCLES {
+	"RED" = "🔴",
+	"AMBER" = "🟡",
+	"GREEN" = "🟢"
+}
+async function complete(env: Env, chatID: string, session: BingAI.Conversation, query: string): Promise<[string, string[]]> {
+	let response = await BingAI.complete(session, env.BING_CONVERSATION_STYLE, query)
+
+	let content
+	let suggestions: string[] = []
+
+	if (typeof response !== "string") {
+		content = BingAI.extractBody(response)
+		content += "\n\n"
+		if (response.item.throttling.numUserMessagesInConversation < response.item.throttling.maxNumUserMessagesInConversation) {
+			session.currentIndex = response.item.throttling.numUserMessagesInConversation
+			await Cloudflare.putKVChatSession(env.BINGAI_SYDNEY_TELEGRAM_BOT_KV, chatID, 21600, session) // conversations expire after 6h (or 21600 seconds)
+			const percent = Math.round((response.item.throttling.numUserMessagesInConversation / response.item.throttling.maxNumUserMessagesInConversation))
+			content += `${percent < 0.9 ? CIRCLES.GREEN : (percent < 1 ? CIRCLES.AMBER : CIRCLES.RED)} ${response.item.throttling.numUserMessagesInConversation} of ${response.item.throttling.maxNumUserMessagesInConversation}`
+			suggestions = BingAI.extractSuggestions(response)
+		} else {
+			await Cloudflare.deleteKVChatSession(env.BINGAI_SYDNEY_TELEGRAM_BOT_KV, chatID)
+			content += "NOTE: This conversation has reached limits, forcing a new conversation."
+		}
+	} else {
+		content = response
+	}
+
+	return [content, suggestions]
 }

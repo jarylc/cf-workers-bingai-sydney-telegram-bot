@@ -30,7 +30,7 @@ export namespace Telegram {
 
     export interface From {
         username: string
-        is_bot: boolean
+        id: string
     }
 
     export interface Chat {
@@ -110,6 +110,28 @@ export namespace Telegram {
                 "content-type": "application/json",
             }
         })
+    }
+
+    export function sanitize(text: string): string {
+        const split = text.split(/(```.*)/g)
+        let inCodeBlock = false;
+        for (const i in split) {
+            const line = split[i]
+            if (line.startsWith("```")) {
+                inCodeBlock = !inCodeBlock
+                continue
+            }
+            if (!inCodeBlock) {
+                if (line.startsWith("`") && line.endsWith("`")) {
+                    continue
+                }
+                split[i] = line.replaceAll("[", "｢")
+                    .replaceAll("]", "｣")
+                    .replaceAll("(", "❨")
+                    .replaceAll(")", "❩")
+            }
+        }
+        return split.join("")
     }
 }
 
