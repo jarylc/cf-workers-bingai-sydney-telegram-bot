@@ -81,53 +81,50 @@ export default {
 			}
 		}
 
-		if (update.message || update.callback_query) {
-			const session = await Cloudflare.getKVChatSession(env.BINGAI_SYDNEY_TELEGRAM_BOT_KV, chatID) || await BingAI.createConversation(env.BING_COOKIE)
+		const session = await Cloudflare.getKVChatSession(env.BINGAI_SYDNEY_TELEGRAM_BOT_KV, chatID) || await BingAI.createConversation(env.BING_COOKIE)
 
-			let content = "Unexpected condition"
-			let suggestions: string[] = []
+		// generate message and respond accordingly
+		let content = "Unexpected condition"
+		let suggestions: string[] = []
+		if (update.message) {
+			if (typeof session !== "string") {
+				[content, suggestions] = await complete(env, chatID, session, query)
+			} else {
+				content = session
+			}
 
-			if (update.message) {
+			if (suggestions.length > 0) {
+				return Telegram.generateSendMessageResponse(update.message.chat.id, content, {
+					"reply_to_message_id": update.message.message_id,
+					"reply_markup": {
+						"keyboard": suggestions.map(suggestion => [{text: suggestion}]),
+						"one_time_keyboard": true,
+						"selective": true,
+					}
+				})
+			}
+
+			return Telegram.generateSendMessageResponse(update.message.chat.id, content, {
+				"reply_to_message_id": update.message.message_id,
+				"reply_markup": {
+					"remove_keyboard": true,
+				}
+			})
+		} else if (update.callback_query) {
+			const callbackQuery = update.callback_query
+			ctx.waitUntil(new Promise(async _ => {
+				// query OpenAPI with context
 				if (typeof session !== "string") {
 					[content, suggestions] = await complete(env, chatID, session, query)
+					content += "\nNOTE: Inline query context is shared and can be cleared on the private chat with the bot."
 				} else {
 					content = session
 				}
 
-				if (suggestions.length > 0) {
-					return Telegram.generateSendMessageResponse(update.message.chat.id, content, {
-						"reply_to_message_id": update.message.message_id,
-						"reply_markup": {
-							"keyboard": suggestions.map(suggestion => [{text: suggestion}]),
-							"one_time_keyboard": true,
-							"selective": true,
-						}
-					})
-				}
-
-				return Telegram.generateSendMessageResponse(update.message.chat.id, content, {
-					"reply_to_message_id": update.message.message_id,
-					"reply_markup": {
-						"remove_keyboard": true,
-					}
-				})
-			}
-			if (update.callback_query) {
-				const callbackQuery = update.callback_query
-				ctx.waitUntil(new Promise(async _ => {
-					// query OpenAPI with context
-					if (typeof session !== "string") {
-						[content, suggestions] = await complete(env, chatID, session, query)
-						content += "\nNOTE: Inline query context is shared and can be cleared on the private chat with the bot."
-					} else {
-						content = session
-					}
-
-					// edit message with reply
-					await Telegram.sendEditInlineMessageText(env.TELEGRAM_BOT_TOKEN, callbackQuery.inline_message_id, query, content)
-				}))
-				return Telegram.generateAnswerCallbackQueryResponse(callbackQuery.id)
-			}
+				// edit message with reply
+				await Telegram.sendEditInlineMessageText(env.TELEGRAM_BOT_TOKEN, callbackQuery.inline_message_id, query, content)
+			}))
+			return Telegram.generateAnswerCallbackQueryResponse(callbackQuery.id)
 		}
 
 		// other update

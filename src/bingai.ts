@@ -131,13 +131,17 @@ export namespace BingAI {
         currentIndex?: number
     }
 
+    /*
+    * Create a new conversation with BingAI.
+    * Returns the error string if an error occurred, otherwise returns the session as a Conversation object.
+    */
     export async function createConversation(cookie: string): Promise<Conversation | string> {
         const conversation = await fetch("https://edgeservices.bing.com/edgesvc/turing/conversation/create", {
             "headers": {
                 "cookie": cookie,
                 'accept': 'application/json',
                 'content-type': 'application/json',
-                'x-forwarded-for': '1.1.1.1',
+                'x-forwarded-for': '1.1.1.1', // to bypass location checks
             }
         })
         if (conversation.status !== 200) {
@@ -150,16 +154,13 @@ export namespace BingAI {
         return session
     }
 
-    export async function complete(session: string | Conversation, style: string, message: string): Promise<string | Response> {
+    /*
+    * Complete a conversation with BingAI.
+    * Returns the error string if an error occurred, otherwise returns the BingAI response object.
+    */
+    export async function complete(session: Conversation, style: string, message: string): Promise<string | Response> {
         return await new Promise(async (resolve) => {
-            if (typeof session == "string") {
-                session = await createConversation(session)
-                if (typeof session == "string") {
-                    resolve(session)
-                    return
-                }
-            }
-
+            // to workaround intermittent 502s, perform websocket connection in a loop until success
             let ws: WebSocket | null
             while (true) {
                 try {
@@ -197,7 +198,6 @@ export namespace BingAI {
             })
 
             ws.accept()
-
             ws.send('{"protocol": "json", "version": 1}')
 
             const obj = {
@@ -242,6 +242,10 @@ export namespace BingAI {
         })
     }
 
+    /*
+    * Extract, sanitize and reformat the body of a response from BingAI.
+    * Returns the final response.
+    */
     export function extractBody(response: Response): string {
         const reply = response.item?.messages[response.item?.messages.length-1]
         let data = reply.text || reply.hiddenText || "No response."
@@ -256,6 +260,10 @@ export namespace BingAI {
         return data
     }
 
+    /*
+    * Extract the suggestions from a response from BingAI.
+    * Returns an array of suggestions.
+    */
     export function extractSuggestions(response: Response) {
         const reply = response.item?.messages[response.item?.messages.length-1]
         if (reply.suggestedResponses && reply.suggestedResponses.length > 0) {
