@@ -125,7 +125,9 @@ export namespace Telegram {
                 if (line.startsWith("`") && line.endsWith("`")) {
                     continue
                 }
-                split[i] = line.replaceAll("[", "｢")
+                split[i] = line.replaceAll("_", "\\_")
+                    .replaceAll("*", "\\*")
+                    .replaceAll("[", "｢")
                     .replaceAll("]", "｣")
                     .replaceAll("(", "❨")
                     .replaceAll(")", "❩")

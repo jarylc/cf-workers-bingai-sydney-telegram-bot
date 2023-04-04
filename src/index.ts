@@ -56,6 +56,7 @@ export default {
 			await Telegram.sendEditInlineMessageText(env.TELEGRAM_BOT_TOKEN, update.callback_query.inline_message_id, query, "(Processing...)")
 		}
 
+		// handle commands
 		if (update.message && update.message.text) {
 			// message starts with /start or /bingai
 			if (query.startsWith("/start") || query.startsWith("/bingai") || query.startsWith("/sydney")) {
@@ -110,13 +111,14 @@ export default {
 					"remove_keyboard": true,
 				}
 			})
-		} else if (update.callback_query) {
+		}
+		if (update.callback_query) {
 			const callbackQuery = update.callback_query
 			ctx.waitUntil(new Promise(async _ => {
 				// query OpenAPI with context
 				if (typeof session !== "string") {
 					[content, suggestions] = await complete(env, chatID, session, query)
-					content += "\nNOTE: Inline query context is shared and can be cleared on the private chat with the bot."
+					content += "\nℹ️ Inline query context is shared with the private chat with the bot."
 				} else {
 					content = session
 				}
@@ -154,7 +156,7 @@ async function complete(env: Env, chatID: string, session: BingAI.Conversation, 
 			suggestions = BingAI.extractSuggestions(response)
 		} else {
 			await Cloudflare.deleteKVChatSession(env.BINGAI_SYDNEY_TELEGRAM_BOT_KV, chatID)
-			content += "NOTE: This conversation has reached limits, forcing a new conversation."
+			content += "⚠️ This conversation has reached limits, forcing a new conversation."
 		}
 	} else {
 		content = response
