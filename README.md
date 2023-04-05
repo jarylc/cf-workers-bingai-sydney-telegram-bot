@@ -46,7 +46,7 @@ Notes:
 ```
 bingai - Triggers use of the bot in group chats without toggling Private Mode
 sydney - Triggers use of the bot in group chats without toggling Private Mode
-clear - Clears the stored context for the current chat and any ForceReply messages
+clear - Clear context for the current chat and start a new conversation
 ```
 ### Bot Inline Query Placeholder
 ```

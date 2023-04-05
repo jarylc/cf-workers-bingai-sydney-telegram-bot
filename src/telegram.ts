@@ -122,6 +122,7 @@ export namespace Telegram {
                 continue
             }
             if (!inCodeBlock) {
+                // ignore single line code blocks
                 if (line.startsWith("`") && line.endsWith("`")) {
                     continue
                 }

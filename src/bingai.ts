@@ -129,6 +129,7 @@ export namespace BingAI {
             message: string
         }
         currentIndex?: number
+        expiry?: number
     }
 
     /*
@@ -249,6 +250,16 @@ export namespace BingAI {
     export function extractBody(response: Response): string {
         const reply = response.item?.messages[response.item?.messages.length-1]
         let data = reply.text || reply.hiddenText || "No response."
+        // replace superscripts
+        data = data.replace('[^1^]', '¹')
+            .replace('[^2^]', '²')
+            .replace('[^3^]', '³')
+            .replace('[^4^]', '⁴')
+            .replace('[^5^]', '⁵')
+            .replace('[^6^]', '⁶')
+            .replace('[^7^]', '⁷')
+            .replace('[^8^]', '⁸')
+            .replace('[^9^]', '⁹')
         data = Telegram.sanitize(data)
         if (reply.sourceAttributions && reply.sourceAttributions.length > 0) {
             data += "\n\nSources:"

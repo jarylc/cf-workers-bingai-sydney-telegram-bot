@@ -36,9 +36,9 @@ export default {
 			if (update.inline_query.query.trim() === "") {
 				return Telegram.generateAnswerInlineQueryResponse(update.inline_query?.id,
 					"Start new Conversation with BingAI",
-					"Clear context and start a new conversation",
-					"https://gitlab.com/jarylc/cf-workers-bingai-sydney-telegram-bot/-/raw/master/cf-workers-bingai-sydney-telegram-bot.png",
-					`Clear context and start a new conversation?`,
+					"Clear context for the current chat and start a new conversation",
+					"https://upload.wikimedia.org/wikipedia/commons/thumb/f/fd/Broom_icon_1.svg/240px-Broom_icon_1.svg.png",
+					`Clear context for the current chat and start a new conversation?`,
 					'/clear')
 			}
 			const query = update.inline_query?.query
@@ -80,8 +80,8 @@ export default {
 		}
 		// query starts with /clear
 		if (query.startsWith("/clear")) {
-			await Cloudflare.deleteKVChatSession(env.BINGAI_SYDNEY_TELEGRAM_BOT_KV, chatID)
-			const content = "Context for the current chat (if it existed) has been cleared, starting a new conversation"
+			await Cloudflare.deleteKV(env.BINGAI_SYDNEY_TELEGRAM_BOT_KV, chatID)
+			const content = "Context for the current chat (if it existed) has been cleared, starting a new conversation."
 			if (update.callback_query) {
 				await Telegram.sendEditInlineMessageText(env.TELEGRAM_BOT_TOKEN, update.callback_query.inline_message_id, content)
 				return Telegram.generateAnswerCallbackQueryResponse(update.callback_query.id, content)
@@ -98,7 +98,7 @@ export default {
 			await Telegram.sendEditInlineMessageText(env.TELEGRAM_BOT_TOKEN, update.callback_query.inline_message_id, `Query: ${query}\n\nAnswer:\n(Processing...)`)
 		}
 
-		const session = await Cloudflare.getKVChatSession(env.BINGAI_SYDNEY_TELEGRAM_BOT_KV, chatID) || await BingAI.createConversation(env.BING_COOKIE)
+		const session = await Cloudflare.getKV(env.BINGAI_SYDNEY_TELEGRAM_BOT_KV, chatID) || await BingAI.createConversation(env.BING_COOKIE)
 
 		// generate message and respond accordingly
 		let content = "Unexpected condition"
@@ -164,13 +164,15 @@ async function complete(env: Env, chatID: string, session: BingAI.Conversation, 
 		content = BingAI.extractBody(response)
 		content += "\n\n"
 		if (response.item.throttling.numUserMessagesInConversation < response.item.throttling.maxNumUserMessagesInConversation) {
+			if (!session.expiry)
+				session.expiry = Math.round(Date.now() / 1000) + 18000 // conversations expire after 6h (or 21600 seconds, delete at 5 hours or 18000 seconds to be safer)
 			session.currentIndex = response.item.throttling.numUserMessagesInConversation
-			await Cloudflare.putKVChatSession(env.BINGAI_SYDNEY_TELEGRAM_BOT_KV, chatID, 21600, session) // conversations expire after 6h (or 21600 seconds)
-			const percent = Math.round((response.item.throttling.numUserMessagesInConversation / response.item.throttling.maxNumUserMessagesInConversation))
-			content += `${percent < 0.9 ? CIRCLES.GREEN : (percent < 1 ? CIRCLES.AMBER : CIRCLES.RED)} ${response.item.throttling.numUserMessagesInConversation} of ${response.item.throttling.maxNumUserMessagesInConversation} quota used for this conversation.`
+			await Cloudflare.putKV(env.BINGAI_SYDNEY_TELEGRAM_BOT_KV, chatID, session.expiry, session)
+			const percent = response.item.throttling.numUserMessagesInConversation / response.item.throttling.maxNumUserMessagesInConversation
+			content += `${percent < 0.9 ? CIRCLES.GREEN : (percent < 1 ? CIRCLES.AMBER : CIRCLES.RED)} ${response.item.throttling.numUserMessagesInConversation} of ${response.item.throttling.maxNumUserMessagesInConversation} quota used for this conversation (\`/clear\` to start anew).`
 			suggestions = BingAI.extractSuggestions(response)
 		} else {
-			await Cloudflare.deleteKVChatSession(env.BINGAI_SYDNEY_TELEGRAM_BOT_KV, chatID)
+			await Cloudflare.deleteKV(env.BINGAI_SYDNEY_TELEGRAM_BOT_KV, chatID)
 			content += "⚠️ This conversation has reached limits, forcing a new conversation."
 		}
 	} else {
