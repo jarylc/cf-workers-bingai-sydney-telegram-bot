@@ -23,6 +23,7 @@ export default {
 		}
 
 		const update: Telegram.Update = await request.json()
+		console.log(update)
 
 		// user is not in whitelist
 		const username = update.message?.from.username || update.inline_query?.from.username || update.callback_query?.from.username || ""
@@ -33,16 +34,27 @@ export default {
 		// handle inline query confirmation flow
 		if (update.inline_query) {
 			if (update.inline_query.query.trim() === "") {
-				return new Response(null) // no action
+				return Telegram.generateAnswerInlineQueryResponse(update.inline_query?.id,
+					"Start new Conversation with BingAI",
+					"Clear context and start a new conversation",
+					"https://gitlab.com/jarylc/cf-workers-bingai-sydney-telegram-bot/-/raw/master/cf-workers-bingai-sydney-telegram-bot.png",
+					`Clear context and start a new conversation?`,
+					'/clear')
 			}
-			return Telegram.generateAnswerInlineQueryResponse(update.inline_query?.id, update.inline_query?.query)
+			const query = update.inline_query?.query
+			return Telegram.generateAnswerInlineQueryResponse(update.inline_query?.id,
+				"Query BingAI",
+				"Send your query to BingAI (64 character limit, no context)",
+				"https://gitlab.com/jarylc/cf-workers-bingai-sydney-telegram-bot/-/raw/master/cf-workers-bingai-sydney-telegram-bot.png",
+				`Query: ${query}`,
+				query)
 		}
 
 		// update is invalid
 		if ((!update.message || !update.message.text) && (!update.callback_query)) {
 			return new Response(null) // no action
 		}
-		const chatID = update.message?.chat.id || update.callback_query?.from.id || null
+		const chatID = update.message?.chat.id || update.callback_query?.chat_instance || null
 		if (chatID == null) {
 			return new Response(null) // no action
 		}
@@ -51,16 +63,11 @@ export default {
 			return new Response(null) // no action
 		}
 
-		// set temporary processing message if callback query
-		if (update.callback_query) {
-			await Telegram.sendEditInlineMessageText(env.TELEGRAM_BOT_TOKEN, update.callback_query.inline_message_id, query, "(Processing...)")
-		}
-
-		// handle commands
+		// handle message only commands
 		if (update.message && update.message.text) {
 			// message starts with /start or /bingai
 			if (query.startsWith("/start") || query.startsWith("/bingai") || query.startsWith("/sydney")) {
-				return Telegram.generateSendMessageResponse(update.message.chat.id, "Hi @"+ update.message.from.username+"! I'm a chatbot powered by Bing (a.k.a Sydney)! Reply your query to this message!",
+				return Telegram.generateSendMessageResponse(chatID, "Hi @"+ update.message.from.username+"! I'm a chatbot powered by Bing (a.k.a Sydney)! Reply your query to this message!",
 					{
 						"reply_markup": {
 							"force_reply": true,
@@ -70,16 +77,25 @@ export default {
 					}
 				)
 			}
-
-			// message starts with /clear
-			if (query.startsWith("/clear")) {
-				await Cloudflare.deleteKVChatSession(env.BINGAI_SYDNEY_TELEGRAM_BOT_KV, update.message.chat.id)
-				return Telegram.generateSendMessageResponse(update.message.chat.id, "Context for the current chat (if it existed) has been cleared.", {
-					"reply_markup": {
-						"remove_keyboard": true,
-					}
-				})
+		}
+		// query starts with /clear
+		if (query.startsWith("/clear")) {
+			await Cloudflare.deleteKVChatSession(env.BINGAI_SYDNEY_TELEGRAM_BOT_KV, chatID)
+			const content = "Context for the current chat (if it existed) has been cleared, starting a new conversation"
+			if (update.callback_query) {
+				await Telegram.sendEditInlineMessageText(env.TELEGRAM_BOT_TOKEN, update.callback_query.inline_message_id, content)
+				return Telegram.generateAnswerCallbackQueryResponse(update.callback_query.id, content)
 			}
+			return Telegram.generateSendMessageResponse(chatID, content, {
+				"reply_markup": {
+					"remove_keyboard": true,
+				}
+			})
+		}
+
+		// set temporary processing message if callback query
+		if (update.callback_query) {
+			await Telegram.sendEditInlineMessageText(env.TELEGRAM_BOT_TOKEN, update.callback_query.inline_message_id, `Query: ${query}\n\nAnswer:\n(Processing...)`)
 		}
 
 		const session = await Cloudflare.getKVChatSession(env.BINGAI_SYDNEY_TELEGRAM_BOT_KV, chatID) || await BingAI.createConversation(env.BING_COOKIE)
@@ -118,15 +134,14 @@ export default {
 				// query OpenAPI with context
 				if (typeof session !== "string") {
 					[content, suggestions] = await complete(env, chatID, session, query)
-					content += "\nℹ️ Inline query context is shared with the private chat with the bot."
 				} else {
 					content = session
 				}
 
 				// edit message with reply
-				await Telegram.sendEditInlineMessageText(env.TELEGRAM_BOT_TOKEN, callbackQuery.inline_message_id, query, content)
+				await Telegram.sendEditInlineMessageText(env.TELEGRAM_BOT_TOKEN, callbackQuery.inline_message_id, `Query: ${query}\n\nAnswer:\n${content}`)
 			}))
-			return Telegram.generateAnswerCallbackQueryResponse(callbackQuery.id)
+			return Telegram.generateAnswerCallbackQueryResponse(callbackQuery.id, "Bing is processing...")
 		}
 
 		// other update

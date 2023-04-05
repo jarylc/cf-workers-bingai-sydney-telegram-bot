@@ -37,7 +37,7 @@ export namespace Telegram {
         id: string
     }
 
-    export function generateAnswerInlineQueryResponse(inlineQueryID: string, text: string): Response {
+    export function generateAnswerInlineQueryResponse(inlineQueryID: string, title: string, description: string, thumbURL: string, message: string, callback: string): Response {
         return new Response(JSON.stringify({
             "method": "answerInlineQuery",
             "inline_query_id": inlineQueryID,
@@ -45,9 +45,9 @@ export namespace Telegram {
                 {
                     "type": "article",
                     "id": inlineQueryID,
-                    "title": "Query BingAI",
+                    "title": title,
                     "input_message_content": {
-                        "message_text": `Query: ${text}`,
+                        "message_text": `${message}`,
                         "parse_mode": "Markdown",
                     },
                     "reply_markup": {
@@ -55,13 +55,13 @@ export namespace Telegram {
                             [
                                 {
                                     "text": "Confirm?",
-                                    "callback_data": text
+                                    "callback_data": callback
                                 }
                             ]
                         ]
                     },
-                    "description": "Send your query to BingAI (64 character limit, no context)",
-                    "thumb_url": "https://gitlab.com/jarylc/cf-workers-bingai-sydney-telegram-bot/-/raw/master/cf-workers-bingai-sydney-telegram-bot.png"
+                    "description": description,
+                    "thumb_url": thumbURL
                 },
             ],
             "is_personal": true,
@@ -72,11 +72,11 @@ export namespace Telegram {
         })
     }
 
-    export function generateAnswerCallbackQueryResponse(callbackQueryID: string): Response {
+    export function generateAnswerCallbackQueryResponse(callbackQueryID: string, text: string): Response {
         return new Response(JSON.stringify({
             "method": "answerCallbackQuery",
             "callback_query_id": callbackQueryID,
-            "text": "BingAI is processing your query",
+            "text": text,
         }), {
             headers: {
                 "content-type": "application/json",
@@ -84,7 +84,7 @@ export namespace Telegram {
         })
     }
 
-    export async function sendEditInlineMessageText(token: string, inlineMessageID: string, query: string, response: string): Promise<Response> {
+    export async function sendEditInlineMessageText(token: string, inlineMessageID: string, text: string): Promise<Response> {
         return fetch(`https://api.telegram.org/bot${token}/editMessageText`, {
             method: "POST",
             headers: {
@@ -92,7 +92,7 @@ export namespace Telegram {
             },
             body: JSON.stringify({
                 "inline_message_id": inlineMessageID,
-                "text": `Query: ${query}\n\nAnswer:\n${response}`,
+                "text": text,
                 "parse_mode": "Markdown",
             }),
         })

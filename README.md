@@ -11,8 +11,8 @@ This is much slower than ChatGPT variants as there is no way to disable streamin
 This bot supports private chats, group chats and inline mode (tagging the bot in any chat with a query) with a confirmation button to make it smoother to use.
 
 Notes:
-- Inline mode context is shared with the private chat with the bot, you can clear the context there
-- Inline mode is capped at a 64-character limit because of `callback_data` limits, but it can be solved by saving the query in KV if required
+- To clear Inline Mode context, tag the bot in chat without a query and tap on `Clear context and start a new conversation`
+- Inline Mode is capped at a 64-character limit because of `callback_data` limits, but it can be solved by saving the query in KV if required
 - This is mainly for personal use, if you would like to add features, do fork the repository. Do perform PRs back if you would be so kind!
 
 ## Prerequisites
@@ -42,9 +42,13 @@ Notes:
 2. Run `npx wrangler secret put BING_COOKIE` and set your latest Bing cookie request header on https://edgeservices.bing.com/edgesvc/turing/conversation/create
 
 ## Other Optional Steps
-### Commands list (for BotFather as well)
+### Bot Commands list
 ```
 bingai - Triggers use of the bot in group chats without toggling Private Mode
 sydney - Triggers use of the bot in group chats without toggling Private Mode
 clear - Clears the stored context for the current chat and any ForceReply messages
+```
+### Bot Inline Query Placeholder
+```
+Type your query and tap on Query BingAI above to submit
 ```
