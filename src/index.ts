@@ -169,7 +169,8 @@ async function complete(env: Env, chatID: string, session: BingAI.Conversation, 
 			session.currentIndex = response.item.throttling.numUserMessagesInConversation
 			await Cloudflare.putKV(env.BINGAI_SYDNEY_TELEGRAM_BOT_KV, chatID, session.expiry, session)
 			const percent = response.item.throttling.numUserMessagesInConversation / response.item.throttling.maxNumUserMessagesInConversation
-			content += `${percent < 0.9 ? CIRCLES.GREEN : CIRCLES.AMBER} ${response.item.throttling.numUserMessagesInConversation} of ${response.item.throttling.maxNumUserMessagesInConversation} quota used for this conversation (\`/clear\` to start anew).`
+			content += `${percent < 0.9 ? CIRCLES.GREEN : CIRCLES.AMBER} ${response.item.throttling.numUserMessagesInConversation} of ${response.item.throttling.maxNumUserMessagesInConversation} quota used for this conversation (\`/clear\` to reset).`
+			content += `\n⌛ This conversation will automatically expire in ${Math.round((session.expiry - Math.round(Date.now() / 1000)) / 60)} minutes.`
 			suggestions = BingAI.extractSuggestions(response)
 		} else {
 			await Cloudflare.deleteKV(env.BINGAI_SYDNEY_TELEGRAM_BOT_KV, chatID)
