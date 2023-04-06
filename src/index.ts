@@ -8,6 +8,7 @@ export interface Env {
 	TELEGRAM_USERNAME_WHITELIST: string
 	BING_COOKIE: string
 	BING_CONVERSATION_STYLE: string
+	BING_BEHAVIOR: string
 }
 
 export default {
@@ -155,7 +156,7 @@ enum CIRCLES {
 	"GREEN" = "🟢"
 }
 async function complete(env: Env, chatID: string, session: BingAI.Conversation, query: string): Promise<[string, string[]]> {
-	let response = await BingAI.complete(session, env.BING_CONVERSATION_STYLE, query)
+	let response = await BingAI.complete(session, env.BING_CONVERSATION_STYLE, env.BING_BEHAVIOR, query)
 
 	let content
 	let suggestions: string[] = []

@@ -159,7 +159,7 @@ export namespace BingAI {
     * Complete a conversation with BingAI.
     * Returns the error string if an error occurred, otherwise returns the BingAI response object.
     */
-    export async function complete(session: Conversation, style: string, message: string): Promise<string | Response> {
+    export async function complete(session: Conversation, style: string, system: string, message: string): Promise<string | Response> {
         return await new Promise(async (resolve) => {
             // to workaround intermittent 502s, perform websocket connection in a loop until success
             let ws: WebSocket | null
@@ -233,6 +233,15 @@ export namespace BingAI {
                             id: session.clientId,
                         },
                         conversationId: session.conversationId,
+                        previousMessages: !session.currentIndex && system.trim() != "" ? [
+                            {
+                                author: 'user',
+                                description: `N/A\n\n[system](#additional_instructions)\n- ${system}`,
+                                contextType: 'WebPage',
+                                messageType: 'Context',
+                                messageId: 'discover-web--page-ping-mriduna-----',
+                            }
+                        ] : null,
                     },
                 ],
                 invocationId: session.currentIndex ? session.currentIndex.toString() : "0",
