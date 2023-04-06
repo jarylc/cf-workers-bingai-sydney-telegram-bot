@@ -82,7 +82,7 @@ export default {
 		// query starts with /clear
 		if (query.startsWith("/clear")) {
 			await Cloudflare.deleteKV(env.BINGAI_SYDNEY_TELEGRAM_BOT_KV, chatID)
-			const content = "Context for the current chat (if it existed) has been cleared, starting a new conversation."
+			const content = "Thanks for wiping my memory, I'm ready to start a new conversation!"
 			if (update.callback_query) {
 				await Telegram.sendEditInlineMessageText(env.TELEGRAM_BOT_TOKEN, update.callback_query.inline_message_id, content)
 				return Telegram.generateAnswerCallbackQueryResponse(update.callback_query.id, content)
@@ -168,14 +168,14 @@ async function complete(env: Env, chatID: string, session: BingAI.Conversation, 
 			if (!session.expiry)
 				session.expiry = Math.round(Date.now() / 1000) + 18000 // conversations expire after 6h (or 21600 seconds, delete at 5 hours or 18000 seconds to be safer)
 			session.currentIndex = response.item.throttling.numUserMessagesInConversation
-			await Cloudflare.putKV(env.BINGAI_SYDNEY_TELEGRAM_BOT_KV, chatID, session.expiry, session)
+			await Cloudflare.putKV(env.BINGAI_SYDNEY_TELEGRAM_BOT_KV, chatID, session, session.expiry)
 			const percent = response.item.throttling.numUserMessagesInConversation / response.item.throttling.maxNumUserMessagesInConversation
-			content += `${percent < 0.9 ? CIRCLES.GREEN : CIRCLES.AMBER} ${response.item.throttling.numUserMessagesInConversation} of ${response.item.throttling.maxNumUserMessagesInConversation} quota used for this conversation (\`/clear\` to reset).`
-			content += `\n⌛ This conversation will automatically expire in ${Math.round((session.expiry - Math.round(Date.now() / 1000)) / 60)} minutes.`
+			content += `${percent < 0.9 ? CIRCLES.GREEN : CIRCLES.AMBER} ${response.item.throttling.numUserMessagesInConversation} of ${response.item.throttling.maxNumUserMessagesInConversation} messages left before my head needs clearing.`
+			content += `\n⌛ I will forget about this conversation in ${Math.round((session.expiry - Math.round(Date.now() / 1000)) / 60)} minutes as well.`
 			suggestions = BingAI.extractSuggestions(response)
 		} else {
 			await Cloudflare.deleteKV(env.BINGAI_SYDNEY_TELEGRAM_BOT_KV, chatID)
-			content += `️${CIRCLES.RED} This conversation has reached limits, forcing a new conversation.`
+			content += `️${CIRCLES.RED} I have reached my memory limit of ${response.item.throttling.maxNumUserMessagesInConversation} messages. Going ahead to clear my head now!`
 		}
 	} else {
 		content = response

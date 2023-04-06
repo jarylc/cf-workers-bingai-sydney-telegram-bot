@@ -1,24 +1,24 @@
 import {BingAI} from "./bingai";
 
 export namespace Cloudflare {
-    export async function getKV(kv: KVNamespace, chat_id: string): Promise<BingAI.Conversation | null> {
+    export async function getKV(kv: KVNamespace, key: string): Promise<BingAI.Conversation | null> {
         if (!kv) {
             return null
         }
-        return await kv.get(chat_id, { type: "json" }) || null
+        return await kv.get(key, { type: "json" }) || null
     }
 
-    export async function putKV(kv: KVNamespace, chat_id: string, expiration: number, context: BingAI.Conversation) {
+    export async function putKV(kv: KVNamespace, key: string, value: BingAI.Conversation, expiration: number | null = null) {
         if (!kv) {
             return
         }
-        await kv.put(chat_id, JSON.stringify(context), {expiration})
+        await kv.put(key, JSON.stringify(value), expiration ? {expiration: expiration} : {})
     }
 
-    export async function deleteKV(kv: KVNamespace, chat_id: string) {
+    export async function deleteKV(kv: KVNamespace, key: string) {
         if (!kv) {
             return
         }
-        await kv.delete(chat_id)
+        await kv.delete(key)
     }
 }
