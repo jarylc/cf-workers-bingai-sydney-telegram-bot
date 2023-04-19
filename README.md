@@ -38,7 +38,7 @@ Notes:
 11. (Optional) Enable `Inline Mode` for the bot on BotFather to allow inline query flow
 12. Replace `{TELEGRAM_BOT_TOKEN}` and `{WORKERS_NAMESPACE}` on the following `https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/setWebhook?&allowed_updates=%5B%22message%22%2C%22inline_query%22%2C%22callback_query%22%5D&url=https%3A%2F%2Fcf-workers-bingai-syndey-telegram-bot.{WORKERS_NAMESPACE}.workers.dev%2F{TELEGRAM_BOT_TOKEN}` and access it on your browser
 
-### (On cookie expiry) Renewing BING_COOKIE
+### (On cookie expiry, roughly 2 weeks) Renewing BING_COOKIE
 1. Sign in to https://www.bing.com/ on the browser
 2. Run `npx wrangler secret put BING_COOKIE` and set your latest Bing cookie request header on https://edgeservices.bing.com/edgesvc/turing/conversation/create
 
