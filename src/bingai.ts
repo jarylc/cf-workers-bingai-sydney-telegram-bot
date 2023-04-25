@@ -272,10 +272,6 @@ export namespace BingAI {
                         allowedMessageTypes: [
                             "Chat",
                             "Disengaged",
-                            "RenderCardRequest",
-                            "SemanticSerp",
-                            "GenerateContentQuery",
-                            "SearchQuery",
                         ],
                         sliceIds: [
                             "chk1cf",
