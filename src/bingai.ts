@@ -132,6 +132,57 @@ export namespace BingAI {
         expiry?: number
     }
 
+    export const CONVERSATION_STYLES = {
+        "CREATIVE": [
+            "nlu_direct_response_filter",
+            "deepleo",
+            "disable_emoji_spoken_text",
+            "responsible_ai_policy_235",
+            "enablemm",
+            "h3imaginative",
+            "travelansgnd",
+            "dv3sugg",
+            "clgalileo",
+            "gencontentv3",
+            "dv3sugg",
+            "responseos",
+            "e2ecachewrite",
+            "cachewriteext",
+            "nodlcpcwrite",
+            "travelansgnd",
+        ],
+        "BALANCED": [
+            "nlu_direct_response_filter",
+            "deepleo",
+            "disable_emoji_spoken_text",
+            "responsible_ai_policy_235",
+            "enablemm",
+            "galileo",
+            "dv3sugg",
+            "responseos",
+            "e2ecachewrite",
+            "cachewriteext",
+            "nodlcpcwrite",
+            "travelansgnd",
+        ],
+        "PRECISE": [
+            "nlu_direct_response_filter",
+            "deepleo",
+            "disable_emoji_spoken_text",
+            "responsible_ai_policy_235",
+            "enablemm",
+            "galileo",
+            "dv3sugg",
+            "responseos",
+            "e2ecachewrite",
+            "cachewriteext",
+            "nodlcpcwrite",
+            "travelansgnd",
+            "h3precise",
+            "clgalileo",
+        ]
+    }
+
     /*
     * Create a new conversation with BingAI.
     * Returns the error string if an error occurred, otherwise returns the session as a Conversation object.
@@ -201,47 +252,73 @@ export namespace BingAI {
             ws.accept()
             ws.send('{"protocol": "json", "version": 1}')
 
+            let optionsSets
+            switch (style) {
+                case "CREATIVE":
+                    optionsSets = CONVERSATION_STYLES.CREATIVE
+                    break
+                case "PRECISE":
+                    optionsSets = CONVERSATION_STYLES.PRECISE
+                    break
+                default:
+                    optionsSets = CONVERSATION_STYLES.BALANCED
+            }
+
             const obj = {
                 arguments: [
                     {
                         source: 'cib',
-                        optionsSets: [
-                            'nlu_direct_response_filter',
-                            'deepleo',
-                            'responsible_ai_policy_235',
-                            'enablemm',
-                            style,
-                            'dtappid',
-                            'cricinfo',
-                            'cricinfov2',
-                            'dv3sugg',
+                        optionsSets,
+                        allowedMessageTypes: [
+                            "Chat",
+                            "Disengaged",
+                            "RenderCardRequest",
+                            "SemanticSerp",
+                            "GenerateContentQuery",
+                            "SearchQuery",
                         ],
                         sliceIds: [
-                            '222dtappid',
-                            '225cricinfo',
-                            '224locals0',
+                            "chk1cf",
+                            "nopreloadsscf",
+                            "winlongmsg2tf",
+                            "perfimpcomb",
+                            "sugdivdis",
+                            "sydnoinputt",
+                            "wpcssopt",
+                            "wintone2tf",
+                            "0404sydicnbs0",
+                            "405suggbs0",
+                            "scctl",
+                            "330uaugs0",
+                            "0329resp",
+                            "udscahrfon",
+                            "udstrblm5",
+                            "404e2ewrt",
+                            "408nodedups0",
+                            "403tvlansgnd",
                         ],
                         traceId: [...Array(32)].map(() => Math.floor(Math.random() * 16).toString(16)).join(''),
                         isStartOfSession: !session.currentIndex,
                         message: {
                             author: 'user',
+                            inputMethod: "Keyboard",
                             text: message,
-                            messageType: !session.currentIndex ? 'SearchQuery' : 'Chat',
+                            messageType: 'Chat',
                         },
                         conversationSignature: session.conversationSignature,
                         participant: {
                             id: session.clientId,
                         },
                         conversationId: session.conversationId,
-                        previousMessages: !session.currentIndex && system.trim() != "" ? [
-                            {
-                                author: 'user',
-                                description: `N/A\n\n[system](#additional_instructions)\n- ${system}`,
-                                contextType: 'WebPage',
-                                messageType: 'Context',
-                                messageId: 'discover-web--page-ping-mriduna-----',
-                            }
-                        ] : null,
+                        // previousMessages: !session.currentIndex && system.trim() != "" ? [
+                        //     {
+                        //         author: 'user',
+                        //         description: `N/A\n\n[system](#additional_instructions)\n- ${system}`,
+                        //         contextType: 'WebPage',
+                        //         messageType: 'Context',
+                        //         messageId: 'discover-web--page-ping-mriduna-----',
+                        //     }
+                        // ] : null,
                     },
                 ],
                 invocationId: session.currentIndex ? session.currentIndex.toString() : "0",
@@ -287,7 +364,8 @@ export namespace BingAI {
     * Returns an array of suggestions.
     */
     export function extractSuggestions(response: Response) {
-        const reply = response.item?.messages[response.item?.messages.length-1]
+        console.log(response.item?.messages)
+        const reply = response.item?.messages[0].author == "bot" ? response.item?.messages[0] : response.item?.messages[1]
         if (reply.suggestedResponses && reply.suggestedResponses.length > 0) {
             return reply.suggestedResponses.map(s => s.text)
         }
