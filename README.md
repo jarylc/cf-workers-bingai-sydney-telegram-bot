@@ -36,7 +36,7 @@ Notes:
 9. (Optional) To enable context, run `npx wrangler kv:namespace create session` and replace the ID of `BINGAI_SYDNEY_TELEGRAM_BOT_KV` wrangler.toml, else remove `kv_namespaces` block entirely from wrangler.toml
 10. Run `npx wrangler publish` to deploy to Cloudflare Workers
 11. (Optional) Enable `Inline Mode` for the bot on BotFather to allow inline query flow
-12. Replace `{TELEGRAM_BOT_TOKEN}` and `{WORKERS_NAMESPACE}` on the following `https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/setWebhook?allowed_updates=%5B%22message%22%2C%22inline_query%22%2C%22callback_query%22%5D&url=https%3A%2F%2Fcf-workers-bingai-syndey-telegram-bot.{WORKERS_NAMESPACE}.workers.dev%2F{TELEGRAM_BOT_TOKEN}` and access it on your browser
+12. Replace `{TELEGRAM_BOT_TOKEN}` and `{WORKERS_NAMESPACE}` on the following `https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/setWebhook?allowed_updates=%5B%22message%22%2C%22inline_query%22%2C%22callback_query%22%5D&url=https%3A%2F%2Fcf-workers-bingai-sydney-telegram-bot.{WORKERS_NAMESPACE}.workers.dev%2F{TELEGRAM_BOT_TOKEN}` and access it on your browser
 
 ### (On cookie expiry, roughly 2 weeks) Renewing BING_COOKIE
 1. Sign in to https://www.bing.com/ on the browser
