@@ -150,6 +150,7 @@ export namespace BingAI {
             "cachewriteext",
             "nodlcpcwrite",
             "travelansgnd",
+            "nojbfedge",
         ],
         "BALANCED": [
             "nlu_direct_response_filter",
@@ -164,6 +165,7 @@ export namespace BingAI {
             "cachewriteext",
             "nodlcpcwrite",
             "travelansgnd",
+            "nojbfedge",
         ],
         "PRECISE": [
             "nlu_direct_response_filter",
@@ -180,6 +182,7 @@ export namespace BingAI {
             "travelansgnd",
             "h3precise",
             "clgalileo",
+            "nojbfedge",
         ]
     }
 
@@ -213,6 +216,7 @@ export namespace BingAI {
     export async function complete(session: Conversation, style: string, system: string, message: string): Promise<string | Response> {
         return await new Promise(async (resolve) => {
             // to workaround intermittent 502s, perform websocket connection in a loop until success
+            let tries = 0
             let ws: WebSocket | null
             while (true) {
                 try {
@@ -227,6 +231,11 @@ export namespace BingAI {
                 }
                 catch (e) {
                     // ignore
+                }
+
+                tries++
+                if (tries == 3) {
+                    resolve("Timed out connecting to websocket.")
                 }
             }
 
@@ -244,7 +253,6 @@ export namespace BingAI {
                         ws.close()
 
                     const data: Response = JSON.parse(msgString)
-                    console.log(data)
                     resolve(data)
                 }
             })
