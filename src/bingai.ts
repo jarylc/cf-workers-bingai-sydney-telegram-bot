@@ -223,6 +223,9 @@ export namespace BingAI {
                     let sydney = await fetch("https://sydney.bing.com/sydney/ChatHub", {
                         headers: {
                             Upgrade: 'websocket',
+                            'Sec-WebSocket-Protocol': 'permessage-deflate',
+                            'Sec-WebSocket-Version': '13',
+                            'x-forwarded-for': '1.1.1.1',
                         },
                     })
                     ws = sydney.webSocket;

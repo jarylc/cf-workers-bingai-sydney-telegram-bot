@@ -1,8 +1,6 @@
 # cf-workers-bingai-sydney-telegram-bot
 ![Logo](cf-workers-bingai-sydney-telegram-bot.png)
 
-### Note: As of 23/05/2023, Bing seem to have restricted requests coming from Cloudflare Workers, I'm still investigating if there are workarounds.
-
 ## Description
 ![Example](example.png) ![Example (Inline)](example-inline.png)
 
