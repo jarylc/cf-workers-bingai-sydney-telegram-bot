@@ -4,12 +4,12 @@ compatibility_date = "2023-03-02"
 compatibility_flags = ["web_socket_compression"]
 workers_dev = true
 
-[placement]
-mode = "smart"
-
 kv_namespaces = [
     { binding = "BINGAI_SYDNEY_TELEGRAM_BOT_KV", id = "49b8d39d9edf4a83815fb208019cfd58" }
 ]
+
+[placement]
+mode = "smart"
 
 [vars]
 TELEGRAM_USERNAME_WHITELIST = "jarylc Shirleymew"
